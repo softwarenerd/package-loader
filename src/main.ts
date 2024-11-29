@@ -11,7 +11,8 @@ import { PackageLoader } from './packageLoader';
 const main = async () => {
     // Instantiate the PackageLoader.
     const packageLoader = new PackageLoader(
-        '/Users/brian/Work/positron-tryreact19/src/package-dependencies',
+        // '/Users/brian/Desktop/package-dependencies',
+        '/Users/brian/Desktop/test-package-dependencies',
         'es2022'
     );
 
@@ -20,6 +21,8 @@ const main = async () => {
         { packageName: 'he', version: '1.2.0' },
         { packageName: 'react', version: '19.0.0-rc.1'},
         { packageName: 'react-dom', version: '19.0.0-rc.1' },
+        { packageName: 'react-dom', version: '19.0.0-rc.1', fileName: 'client' },
+        { packageName: 'react-window', version: '1.8.10' },
         // { name: 'react-dom@19.0.0-rc.1/client', outputFolder: 'react-dom/client', saveAs: 'client.js' },
     ]);
 };

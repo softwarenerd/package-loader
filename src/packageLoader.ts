@@ -17,6 +17,7 @@ const BASE_URL = new URL('https://esm.sh');
 export interface PackageDescriptor {
     readonly packageName: string;
     readonly version: string;
+    readonly fileName?: string;
 }
 
 /**
@@ -62,9 +63,9 @@ export class PackageLoader {
         fs.mkdirSync(this._outputFolder);
 
         // Load the resources.
-        for (const packageDescriptor of packageDescriptors) {
-            await this.loadPackageDescriptor(packageDescriptor);
-        }
+        packageDescriptors.forEach(async packageDescriptor =>
+            await this.loadPackageDescriptor(packageDescriptor)
+        );
     }
 
     //#region Private Methods
@@ -73,10 +74,16 @@ export class PackageLoader {
      * Loads a package descriptor.
      * @param packageDescriptor The package descriptor.
      */
-    private async loadPackageDescriptor({ packageName, version }: PackageDescriptor) {
+    private async loadPackageDescriptor({ packageName, version, fileName }: PackageDescriptor) {
+        let urlString = packageName + `@${version}`;
+        if (fileName) {
+            urlString += `/${fileName}`;
+        }
+        urlString += `?target=${this._target}`; 
+
         // Construct the URL for the package and the save as path.
-        const url = new URL(packageName + `@${version}` + `?target=${this._target}`, BASE_URL);
-        const saveAsPath = path.join(this._outputFolder, packageName + '.js');
+        const url = new URL(urlString, BASE_URL);
+        const saveAsPath = path.join(this._outputFolder, (fileName ?? packageName) + '.js');
 
         // Log what's happening.
         console.log(`\nLoading '${url}' to '${saveAsPath}'`);
@@ -87,6 +94,7 @@ export class PackageLoader {
         // Find all the import / export dependencies and load them as dependencies.
         let matches = contents.matchAll(/((?:import|export)[^|\"]*)\"([^|\"]+)\";/g);
         for (const match of matches) {
+            // If the match length is not 3, this is a bug. Throw an error.
             if (match.length !== 3) {
                 throw new Error('Invalid match length detected on import or export.');
             }
@@ -102,7 +110,7 @@ export class PackageLoader {
                 );
             }
 
-            // Create the save as by stripping version and target information from the dependency.
+            // Create the save as.
             const saveAs = this.createSaveAs(dependency);
 
             // Fixup the dependency in the contents.
@@ -157,13 +165,21 @@ export class PackageLoader {
                     );
                 }
 
-                const saveAs = this.createSaveAs(dependency);
+                // Create the dependency save as.
+                let dependencySaveAs = this.createSaveAs(dependency);
+
+                let fixed: string;
+                if (dependencySaveAs === `./${path.basename(dependency)}`) {
+                    fixed = '../'.repeat(level) + path.basename(dependency);
+                } else {
+                    fixed = dependencySaveAs;
+                }
 
                 // Fixup the dependency in the contents.
-                contents = contents.replace(dependency, saveAs);
+                contents = contents.replace(dependency, fixed);
 
                 // Load the dependency
-                await this.loadDependency(level + 1, dependency, saveAs);
+                await this.loadDependency(level + 1, dependency, dependencySaveAs);
             }
         }
 
@@ -178,10 +194,10 @@ export class PackageLoader {
      */
     private createSaveAs(dependency: string) {
         // Create the save as by stripping version and target information from the dependency.
-        let saveAs = dependency.replace(/\/(v135|stable)\//, './');
-        saveAs = saveAs.replace(/@[^\/]+/, '');
-        saveAs = saveAs.replace(`/${this._target}`, '');
-        return saveAs;
+        dependency = dependency.replace(/\/(v[0-9]+|stable)\//, './');
+        dependency = dependency.replace(/@[^\/]+/, '');
+        dependency = dependency.replace(`/${this._target}`, '');
+        return dependency;
     }
 
     /**
