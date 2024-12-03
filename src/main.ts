@@ -3,27 +3,25 @@
  *  Licensed under the Elastic License 2.0. See LICENSE.txt for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { PackageLoader } from './packageLoader';
+import { ESMPackageLoader } from './esmPackageLoader';
 
 /**
  * Main function.
  */
 const main = async () => {
     // Instantiate the PackageLoader.
-    const packageLoader = new PackageLoader(
-        // '/Users/brian/Desktop/package-dependencies',
-        '/Users/brian/Desktop/test-package-dependencies',
+    const packageLoader = new ESMPackageLoader(
+        '/Users/brian/Desktop/esm-package-dependencies',
         'es2022'
     );
 
     // Load the package descriptors.
     await packageLoader.loadPackageDescriptors([
         { packageName: 'he', version: '1.2.0' },
-        { packageName: 'react', version: '19.0.0-rc.1'},
-        { packageName: 'react-dom', version: '19.0.0-rc.1' },
-        { packageName: 'react-dom', version: '19.0.0-rc.1', fileName: 'client' },
+        { packageName: 'react', version: '18.3.1' },
+        { packageName: 'react-dom', version: '18.3.1' },
+        { packageName: 'react-dom', version: '18.3.1', fileName: 'client' },
         { packageName: 'react-window', version: '1.8.10' },
-        // { name: 'react-dom@19.0.0-rc.1/client', outputFolder: 'react-dom/client', saveAs: 'client.js' },
     ]);
 };
 
